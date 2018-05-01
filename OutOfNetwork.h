@@ -42,9 +42,7 @@ string OutOfNetwork(string rualMessage, vector<User>& dataBase,
 		int checkRes = check_user(dataBase, rualMessage);
         if(checkRes == 0)//身份匹配成功
         {
-            string retVal = "0";
-
-			retVal += checkMesCache(mesCache, userid);
+            string retVal = to_string(userid);
 			cout << retVal << " LOGIN" << endl;
 			
             return retVal;

@@ -1,5 +1,7 @@
 /* 数据库初始化函数 */
-
+#include <vector>
+#include <User.h>
+using namespace std;
 
 
 

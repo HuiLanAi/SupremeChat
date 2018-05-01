@@ -42,6 +42,7 @@ int __cdecl main(void)
     
     vector<User> userData;
     vector<Message> mesCache;
+    mesCache.clear();    
 
     // 可能要开一个多线程绑定一个新的监听端口
     HANDLE inquiryThread = CreateThread(NULL, 0, handleInquiry, (void*) &mesCache, 0, NULL);
