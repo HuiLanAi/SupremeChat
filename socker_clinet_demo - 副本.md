@@ -67,6 +67,8 @@ int __cdecl main(int argc, char **argv)
 
     // Attempt to connect to an address until one succeeds
     for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
+        //result最初是一个空指针
+        // Create a SOCKET for connecting to server
         ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
             ptr->ai_protocol);
         if (ConnectSocket == INVALID_SOCKET) {
@@ -96,8 +98,6 @@ int __cdecl main(int argc, char **argv)
     }
     //此处的ERROR和循环内的ERROR有何区别？为什么需要专门写在外面
 
-    
-    
     while (true)
     {
         cout << "请输入消息" << endl;
