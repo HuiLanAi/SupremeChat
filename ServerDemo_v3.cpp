@@ -39,10 +39,13 @@ using namespace std;
 
 int __cdecl main(void)
 {
-可能要开一个多线程绑定一个新的监听端口
     
     vector<User> userData;
     vector<Message> mesCache;
+
+    // 可能要开一个多线程绑定一个新的监听端口
+    HANDLE inquiryThread = CreateThread(NULL, 0, handleInquiry, (void*) &mesCache, 0, NULL);
+    
 
     initialize(&userData);
 
@@ -152,13 +155,13 @@ int __cdecl main(void)
             string recvBufToStr = recvBuf;
             string retVal = "";
 
-            retVal = OutOfNetwork(recvBufToStr, userData, mesCache);
+            retVal = OutOfNetwork(recvBufToStr, userData, mesCache) + "发送成功";
 
             cout << "size: " << mesCache.size() << endl;
             cout << "发送" << endl << retVal << endl;
 
             int res = send(ClientSocket, retVal.c_str(), retVal.length(), 0);
-            马上要修改 要适应多线程的修改 此处只返回发送成功的信号就行了 要改动OutOfNetwork函数
+            // 马上要修改 要适应多线程的修改 此处只返回发送成功的信号就行了 要改动OutOfNetwork函数
             if (res == SOCKET_ERROR)
             {
                 printf("发送失败: %d\n", WSAGetLastError());

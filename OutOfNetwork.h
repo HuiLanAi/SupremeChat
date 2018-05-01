@@ -300,20 +300,18 @@ DWORD WINAPI handleInquiry(LPVOID mesCache)
             string retVal = "";
 			// recvBufToStr是转成string的报文
 
-			int userid = 
+			string temp = "";
+			for (int i = 1; i < recvBufToStr.size(); i++)
+				temp += recvBufToStr[i];
+			int userid = atoi(temp.c_str());
+			//嗅探来源用户名
 
-			string retVal = checkMesCache((vector<Message>&)mesCache, userid);
+			retVal = checkMesCache((vector<Message>&)mesCache, userid);
 
-			// 从报文里提取出用户id
-			// 在mesCache查询
-			// 我记得checkMesCache里查后即删 如果没有就加上查后即删
-			// 然后发送就完事了
-
-            cout << "size: " << mesCache.size() << endl;
-            cout << "发送" << endl << retVal << endl;
+            cout << "子线程发送" << endl << retVal << endl;
 
             int res = send(ClientSocket, retVal.c_str(), retVal.length(), 0);
-            马上要修改 要适应多线程的修改 此处只返回发送成功的信号就行了 要改动OutOfNetwork函数
+            // 马上要修改 要适应多线程的修改 此处只返回发送成功的信号就行了 要改动OutOfNetwork函数
             if (res == SOCKET_ERROR)
             {
                 printf("发送失败: %d\n", WSAGetLastError());
