@@ -113,7 +113,7 @@ void initialize(vector<User>* u )
        u1.cipher[6]=0;
 
        u1.onlineFlag=false;
-     u->push_back(u1);
+       u -> push_back(u1);
     }
 }
 

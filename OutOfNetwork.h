@@ -43,7 +43,8 @@ string OutOfNetwork(string rualMessage, vector<User>& dataBase,
         if(checkRes == 0)//身份匹配成功
         {
             string retVal = to_string(userid);
-			cout << retVal << " LOGIN" << endl;
+			cout << retVal << "用户 LOGIN" << endl;
+			retVal = '0';
 			
             return retVal;
         }
@@ -176,25 +177,33 @@ string checkMesCache (vector<Message>& mesCache, int userid)
 	return retVal;
 }
 
-// class InqInfo
-// {
-// 	public:
-// 	string inquiryMes;
-// 	//接收到的完整的报文
-// 	vector<Message>& mesCache;
-// 	//报文缓存块的地址
+class MesCacheInfo
+{
+	public:
+	int size;
+	//报文缓存块的大小
+	vector<Message>& mesCache;
+	//报文缓存块的地址
 
-// 	InqInfo(string i, vector<Message>& m)
-// 	{
-// 		inquiryMes = i;
-// 		mesCache = m;
-// 	}
-// };
+	MesCacheInfo(int i, vector<Message>& m)
+	{
+		size = i;
+		mesCache = m;
+	}
+
+};
 
 DWORD WINAPI handleInquiry(LPVOID mesCache)
 //服务器端的监听线程
 //传入的参数只要消息数据库就够了
+bug在于mesCache作为一个空指针传进来的时候 其size属性就被改乱掉了 之后会溢出界限
+解决方案：打算新建一个类 把mesCache和size封装在一起
+但是首先 1. 要改动checkMesCache
+2. 当有消息传入或者被删除时 如何保证size的值的实时更新呢
+
 {
+	// vector<Message>& tempMesCache = (vector<Message>&) mesCache;
+
     WSADATA wsaData;
 	int iResult;
 
@@ -304,7 +313,7 @@ DWORD WINAPI handleInquiry(LPVOID mesCache)
 			int userid = atoi(temp.c_str());
 			//嗅探来源用户名
 
-			retVal = checkMesCache((vector<Message>&)mesCache, userid);
+			retVal = checkMesCache(tempMesCache, userid);
 
             cout << "子线程发送" << endl << retVal << endl;
 
