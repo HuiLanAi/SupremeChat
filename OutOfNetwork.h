@@ -18,13 +18,31 @@
 
 using namespace std;
 
+class MesCacheInfo
+{
+	public:
+	int size;
+	//报文缓存块的大小
+	vector<Message>* mesCache;
+	//报文缓存块的地址
+
+	MesCacheInfo(int i, vector<Message>* m)
+	{
+		size = i;
+		mesCache = m;
+	}
+
+};
+
+
 int check_user(vector<User>& user, string s);
-string checkMesCache (vector<Message>& mesCache, int userid);
+string checkMesCache (MesCacheInfo* mesCacheInfo, int userid);
 
 string OutOfNetwork(string rualMessage, vector<User>& dataBase, 
-                    vector<Message>& mesCache)
+                    MesCacheInfo* mesCacheInfo)
 //退出要想好用那种报文头合适
 {
+	vector<Message>* mesCache= mesCacheInfo -> mesCache;
 	int k=1;
     string temp="";
 	while(rualMessage[k]!='|')
@@ -69,7 +87,7 @@ string OutOfNetwork(string rualMessage, vector<User>& dataBase,
 		for(int i = 1; i < rualMessage.size(); i ++)
 			temp += rualMessage[i];
 		inquiryOrigin = atoi(temp.c_str());
-		string recvMessage = checkMesCache(mesCache, inquiryOrigin);
+		string recvMessage = checkMesCache(mesCacheInfo, inquiryOrigin);
 		return recvMessage;
 	}
 
@@ -77,7 +95,10 @@ string OutOfNetwork(string rualMessage, vector<User>& dataBase,
 	// 仅仅写入就行了
     {
 		Message curMesg = Message(rualMessage); //当前信息
-		mesCache. push_back(curMesg);			//收入缓存池
+		(*mesCache).push_back(curMesg);			//收入缓存池
+		mesCacheInfo -> size ++;
+		//封装类中要做到写入时的大小同步更新
+
 		// string idChar = rualMessage;
 		// int posi = idChar.find('|');
 		// idChar = idChar.substr(posi, idChar.length() - posi- 1);
@@ -152,24 +173,28 @@ int check_user(vector<User>& user, string s)
 }
 
 
-string checkMesCache (vector<Message>& mesCache, int userid)
+string checkMesCache (MesCacheInfo* mesCacheInfo, int userid)
 //检查是否有改用户的消息缓存
 //格式为：时间 发送者 换行 消息 换行
 //每提取出一条消息 就将该消息在数据库中删除
 {
     string retVal = " ";
-	if((mesCache).empty()) return retVal;
+	if(mesCacheInfo -> size == 0) return retVal;
 
-    for(int i = 0; i < (mesCache.size()); i ++)
+	vector<Message>* mesCache = mesCacheInfo -> mesCache;
+
+    for(int i = 0; i < (mesCacheInfo -> size); i ++)
     {
-        if(mesCache.at(i).receiver == userid)
+        if((*mesCache).at(i).receiver == userid)
         {
-            retVal += mesCache. at(i).launchTime;
+            retVal += (*mesCache). at(i).launchTime;
             retVal += "  ";
-            retVal += to_string(mesCache. at(i).sender) + "\n" 
-						+ mesCache. at(i).message + "\n";
-			vector<Message>:: iterator cur = (mesCache.begin());
-			(mesCache).erase(cur + i);
+            retVal += to_string((*mesCache). at(i).sender) + "\n"
+						+ (*mesCache). at(i).message + "\n";
+			vector<Message>:: iterator cur = ((*mesCache).begin());
+			(*mesCache).erase(cur + i);
+			mesCacheInfo -> size --;
+			//封装类中删除一条消息时大小也要同步更新
 			i -= 1;
         }
     }
@@ -177,29 +202,14 @@ string checkMesCache (vector<Message>& mesCache, int userid)
 	return retVal;
 }
 
-class MesCacheInfo
-{
-	public:
-	int size;
-	//报文缓存块的大小
-	vector<Message>& mesCache;
-	//报文缓存块的地址
 
-	MesCacheInfo(int i, vector<Message>& m)
-	{
-		size = i;
-		mesCache = m;
-	}
-
-};
-
-DWORD WINAPI handleInquiry(LPVOID mesCache)
+DWORD WINAPI handleInquiry(LPVOID mesCacheInfo)
 //服务器端的监听线程
 //传入的参数只要消息数据库就够了
-bug在于mesCache作为一个空指针传进来的时候 其size属性就被改乱掉了 之后会溢出界限
-解决方案：打算新建一个类 把mesCache和size封装在一起
-但是首先 1. 要改动checkMesCache
-2. 当有消息传入或者被删除时 如何保证size的值的实时更新呢
+// bug在于mesCache作为一个空指针传进来的时候 其size属性就被改乱掉了 之后会溢出界限
+// 解决方案：打算新建一个类 把mesCache和size封装在一起
+// 但是首先 1. 要改动checkMesCache
+// 2. 当有消息传入或者被删除时 如何保证size的值的实时更新呢
 
 {
 	// vector<Message>& tempMesCache = (vector<Message>&) mesCache;
@@ -313,7 +323,7 @@ bug在于mesCache作为一个空指针传进来的时候 其size属性就被改乱掉了 之后会溢出界限
 			int userid = atoi(temp.c_str());
 			//嗅探来源用户名
 
-			retVal = checkMesCache(tempMesCache, userid);
+			retVal = checkMesCache((MesCacheInfo*)mesCacheInfo, userid);
 
             cout << "子线程发送" << endl << retVal << endl;
 

@@ -42,13 +42,15 @@ int __cdecl main(void)
     
     vector<User> userData;
     vector<Message> mesCache;
-    mesCache.clear();    
+    mesCache.clear();
+    MesCacheInfo mesCacheInfo((int)(mesCache.size()), &mesCache);
+    //把mesCache和其大小一起封装    
 
     //清空数据库
 
     // 可能要开一个多线程绑定一个新的监听端口
-    HANDLE inquiryThread = CreateThread(NULL, 0, handleInquiry, (void*) &mesCache, 0, NULL);
-    
+    HANDLE inquiryThread = CreateThread(NULL, 0, handleInquiry, (void*) &mesCacheInfo, 0, NULL);
+    //传入一个封装信息类
 
     initialize(&userData);
 
@@ -158,7 +160,7 @@ int __cdecl main(void)
             string recvBufToStr = recvBuf;
             string retVal = "";
 
-            retVal = OutOfNetwork(recvBufToStr, userData, mesCache) + "发送成功";
+            retVal = OutOfNetwork(recvBufToStr, userData, &mesCacheInfo) + "发送成功";
 
             cout << "size: " << mesCache.size() << endl;
             cout << "发送" << endl << retVal << endl;
