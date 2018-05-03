@@ -178,7 +178,7 @@ string checkMesCache (MesCacheInfo* mesCacheInfo, int userid)
 //格式为：时间 发送者 换行 消息 换行
 //每提取出一条消息 就将该消息在数据库中删除
 {
-    string retVal = "";
+    string retVal = "*";
 	if(mesCacheInfo -> size == 0) return retVal;
 
 	vector<Message>* mesCache = mesCacheInfo -> mesCache;
@@ -188,7 +188,7 @@ string checkMesCache (MesCacheInfo* mesCacheInfo, int userid)
         if((*mesCache).at(i).receiver == userid)
         {
             retVal += (*mesCache). at(i).launchTime;
-            retVal += "  ";
+            retVal += " ";
             retVal += to_string((*mesCache). at(i).sender) + "\n"
 						+ (*mesCache). at(i).message + "\n";
 			vector<Message>:: iterator cur = ((*mesCache).begin());
