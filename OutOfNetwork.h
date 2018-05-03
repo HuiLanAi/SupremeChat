@@ -178,7 +178,7 @@ string checkMesCache (MesCacheInfo* mesCacheInfo, int userid)
 //格式为：时间 发送者 换行 消息 换行
 //每提取出一条消息 就将该消息在数据库中删除
 {
-    string retVal = " ";
+    string retVal = "";
 	if(mesCacheInfo -> size == 0) return retVal;
 
 	vector<Message>* mesCache = mesCacheInfo -> mesCache;
@@ -314,7 +314,7 @@ DWORD WINAPI handleInquiry(LPVOID mesCacheInfo)
         {
             printf("%s\n", recvBuf);
             string recvBufToStr = recvBuf;
-            string retVal = "";
+            string retVal = " ";
 			// recvBufToStr是转成string的报文
 
 			string temp = "";
