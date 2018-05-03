@@ -344,16 +344,25 @@ int sendInquiryMessage(string* ipAddrServer, string message,
     }
 
     char recvCache[DEFAULT_BUFLEN] = {0};
+
     iRes = recv(ConnectSocket, recvCache, DEFAULT_BUFLEN, 0);
+    cout << "client_user 350 iRes " << iRes << endl;
+    
+
     if(iRes > 0)
     {
-        // cout << "嗅探成功" << endl;
-        // if(recvCache[0] != ' ' && recvCache[1] != 0)
+        cout << "嗅探成功" << endl;
+        string recvStr(recvCache);
+        if(recvStr != " ")
             cout << recvCache << endl;
     }
     else if (iRes == 0) printf("连接已关闭\n");
-    else printf("连接失败: %d\n", WSAGetLastError());
-    closesocket(ConnectSocket);
+    else 
+    {
+        printf("连接失败: %d\n", WSAGetLastError());
+        closesocket(ConnectSocket);
+    }
+   
 }
 
 
@@ -395,6 +404,8 @@ DWORD WINAPI inquiry(LPVOID clientInfo)
     {
         string userNameStr = to_string(info -> userName);
 
+		cout << "client_user 407 " << endl;
+
         // fakeListen(&ipAddrServer, userNameStr, &hints, &result);
         string input = "";
         //用于发送的字符串
@@ -405,7 +416,7 @@ DWORD WINAPI inquiry(LPVOID clientInfo)
         //这个地方要重新设置一下端口号
         funcRes = sendInquiryMessage(&ipAddrServer, input, &hints, &result);
 
-        Sleep(2000);
+        Sleep(80);
         //每100毫秒执行一次到服务器的问询
     }
 
