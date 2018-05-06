@@ -8,7 +8,7 @@
 #include "windows.h"
 #define WIN32_LEAN_AND_MEAN
 #define INQUIRY_PORT "27016"
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 8188
 #define INQ_FLAG 3
 
 
@@ -42,6 +42,8 @@ string OutOfNetwork(string rualMessage, vector<User>& dataBase,
                     MesCacheInfo* mesCacheInfo)
 //退出要想好用那种报文头合适
 {
+	if(rualMessage[0] != '1') return " file ";
+
 	vector<Message>* mesCache= mesCacheInfo -> mesCache;
 	int k=1;
     string temp="";
@@ -78,43 +80,43 @@ string OutOfNetwork(string rualMessage, vector<User>& dataBase,
         }
     }
 
-	else if(rualMessage[0] == INQ_FLAG)
-	{
-		//登录部分要改成配合多线程的
-		int inquiryOrigin = 0;
-		string temp = "";
-		//嗅探来源用户名
-		for(int i = 1; i < rualMessage.size(); i ++)
-			temp += rualMessage[i];
-		inquiryOrigin = atoi(temp.c_str());
-		string recvMessage = checkMesCache(mesCacheInfo, inquiryOrigin);
-		return recvMessage;
-	}
+	// else if(rualMessage[0] == INQ_FLAG)
+	// {
+	// 	//登录部分要改成配合多线程的
+	// 	int inquiryOrigin = 0;
+	// 	string temp = "";
+	// 	//嗅探来源用户名
+	// 	for(int i = 1; i < rualMessage.size(); i ++)
+	// 		temp += rualMessage[i];
+	// 	inquiryOrigin = atoi(temp.c_str());
+	// 	string recvMessage = checkMesCache(mesCacheInfo, inquiryOrigin);
+	// 	return recvMessage;
+	// }
 
-    else if (rualMessage[0] == FRIMES_FLAG)//普通报文
-	// 仅仅写入就行了
-    {
-		Message curMesg = Message(rualMessage); //当前信息
-		(*mesCache).push_back(curMesg);			//收入缓存池
-		mesCacheInfo -> size ++;
-		//封装类中要做到写入时的大小同步更新
+    // else if (rualMessage[0] == FRIMES_FLAG)//普通报文
+	// // 仅仅写入就行了
+    // {
+	// 	Message curMesg = Message(rualMessage); //当前信息
+	// 	(*mesCache).push_back(curMesg);			//收入缓存池
+	// 	mesCacheInfo -> size ++;
+	// 	//封装类中要做到写入时的大小同步更新
 
-		// string idChar = rualMessage;
-		// int posi = idChar.find('|');
-		// idChar = idChar.substr(posi, idChar.length() - posi- 1);
-		//得到接受者id的字符串
+	// 	// string idChar = rualMessage;
+	// 	// int posi = idChar.find('|');
+	// 	// idChar = idChar.substr(posi, idChar.length() - posi- 1);
+	// 	//得到接受者id的字符串
 		
-		// string idChar = rualMessage;
-		// int posi = idChar.find('|');
-		// idChar = idChar.substr(0, posi - 1);
-		// int userid = atoi(idChar.c_str());
+	// 	// string idChar = rualMessage;
+	// 	// int posi = idChar.find('|');
+	// 	// idChar = idChar.substr(0, posi - 1);
+	// 	// int userid = atoi(idChar.c_str());
 
-		// string retVal = checkMesCache(mesCache, userid);
-		// cout << retVal << " FRI_MES" << endl;
-		string retVal = "";
-		return retVal;
-		//返回一个空字符串
-	}
+	// 	// string retVal = checkMesCache(mesCache, userid);
+	// 	// cout << retVal << " FRI_MES" << endl;
+	// 	string retVal = "";
+	// 	return retVal;
+	// 	//返回一个空字符串
+	// }
 }
 
 int check_user(vector<User>& user, string s)

@@ -25,7 +25,7 @@ using namespace std;
 #pragma comment (lib, "AdvApi32.lib")
 
 
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 8188
 
 #define DEFAULT_PORT "27015"
 //老版本中用于收发一体的端口
@@ -102,7 +102,7 @@ int __cdecl main()
     InqClitInfo clinetInfo(userName, ipAddrServer);
     //用该对象来初始化一个问询线程
     //子线程加在用户身份验证完成后和发送第一条消息报文前
-    HANDLE inquiryThread = CreateThread(NULL, 0, inquiry, (void*)&clinetInfo, 0, NULL);
+    //HANDLE inquiryThread = CreateThread(NULL, 0, inquiry, (void*)&clinetInfo, 0, NULL);
 
 
     while (input != "2  ")
@@ -124,26 +124,37 @@ int __cdecl main()
         if(fileOrNot)
         //发送文件
         {
-            char fileName[50] = {0};
-            long fileSize = 0;
-            cout << "请输入文件名" << endl;
-            cin >> fileName;
-            cout << endl;
+            char fileName[100] = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication2\\Debug\\1.png";
+            unsigned long fileSize = 0;
+            //cout << "请输入文件名" << endl;
+            //cin >> fileName;
 
-            ifstream fileToSend;
-            fileToSend.open(fileName, ios::binary | ios:: in | ios::ate, 0);
-            fileSize = fileToSend.tellg();
-            fileToSend.seekg(0, ios::beg);
+            // ifstream fileToSend (fileName, ios::binary | ios:: in | ios::ate);
+            FILE* fp = fopen(fileName, "rb");
+            fseek(fp, 0, SEEK_END);
+            fileSize = ftell(fp);
+            rewind(fp);
+            
+            // fileSize = fileToSend.tellg();
+			// fileSize++;
+            // fileToSend.seekg(0, ios::beg);
+
             char* fileInMem = new char [fileSize];
-            //新开辟一块内存空间来接收大文件
-            fileToSend.read(fileInMem, fileSize);
-            fileToSend.close();
+            memset(fileInMem, 0, fileSize);
+            fread(fileInMem, fileSize, 1, fp);
+            fclose(fp);
+            // //新开辟一块内存空间来接收大文件
+            // fileToSend.read(fileInMem, fileSize);
+            // fileToSend.close();
 
-            string binFileToStr(fileInMem);
+            // string binFileToStr(fileInMem);
+            // cout << "文件内容： " << binFileToStr << endl;
             //在这里偷个懒哈，，，
             //暂时先不写专用的文件发送函数了 先用这个意思一下
-            sendMessageToServer(&ipAddrServer, binFileToStr, &hints, &result);
-            
+            sendFileToServer(&ipAddrServer, fileInMem, &hints, &result, fileSize);
+            sendMessageToServer(&ipAddrServer, to_string(fileSize), &hints, &result);
+            // for(int i = 0; i < fileSize; i ++) 
+            //     cout << (int)fileInMem[i] << endl;
         }
         
 

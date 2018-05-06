@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include "iostream"
 #include "fstream"
+#include "cstring"
 #include "string"
 using namespace std;
 
@@ -26,7 +27,7 @@ using namespace std;
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
-#define DEFAULT_BUFLEN 102400000
+#define DEFAULT_BUFLEN 8188
 //不知道改这个数组的大小有没有用
 
 #define DEFAULT_PORT "27015"
@@ -49,7 +50,7 @@ int __cdecl main(void)
     //清空数据库
 
     // 可能要开一个多线程绑定一个新的监听端口
-    HANDLE inquiryThread = CreateThread(NULL, 0, handleInquiry, (void*) &mesCacheInfo, 0, NULL);
+    //HANDLE inquiryThread = CreateThread(NULL, 0, handleInquiry, (void*) &mesCacheInfo, 0, NULL);
     //传入一个封装信息类
 
     initialize(&userData);
@@ -115,6 +116,15 @@ int __cdecl main(void)
 
 	cout << "Socket绑定初始化完毕" << endl;
 
+    char fileFlag = 0;
+    //文件传输标识符 不得不写在大循环外面
+    char tempFile[DEFAULT_BUFLEN];
+    memset(tempFile, '\0', DEFAULT_BUFLEN);
+    //当前回合接收了文件 把recvBuf的值转移进来
+    //下回合recvBuf接受了文件大小
+    //再把tempFile写入
+    
+
     while (1)
     {
         iResult = listen(ListenSocket, SOMAXCONN);
@@ -132,11 +142,11 @@ int __cdecl main(void)
         cout << "正在等待接入..." << endl;
         ClientSocket = accept(ListenSocket, NULL, NULL);
         if (ClientSocket == INVALID_SOCKET)
-		{
-			cout << "接收失败" << endl;
-			continue;
-		}
-		cout << "收到一个消息: " << endl;
+        {
+            cout << "接收失败" << endl;
+            continue;
+        }
+        cout << "收到一个消息: " << endl;
 
         if (ClientSocket == INVALID_SOCKET)
         {
@@ -146,64 +156,116 @@ int __cdecl main(void)
             return 1;
         }
 
-        //这个地方可能要去掉
-	    //closesocket(ListenSocket);
 
-        while(1)
+        // for (int i = 0; i < DEFAULT_BUFLEN; i++)
+        //     recvBuf[i] = 0;
+        //清空接收池
+
+        memset(recvBuf, 0, DEFAULT_BUFLEN);//recvBuf清零
+
+        char fileSizeStr [50] = {0};
+        //用于临时保存文件大小
+        unsigned int fileSize = 0;
+
+        iResult = recv(ClientSocket, recvBuf, DEFAULT_BUFLEN, 0);
+        cout << recvBuf << endl;
+
+        if(recvBuf[2] != '|' && fileFlag == 0) fileFlag = 1;
+        if(recvBuf[2] == '|') fileFlag = 0;
+
+        if (iResult > 0)
+        //这里为了测试文件传输 注释掉了很多无关动作 不然文件传输没法运行
         {
-            for (int i = 0; i < DEFAULT_BUFLEN; i++)
-                recvBuf[i] = 0;
-            //清空接收池
+            // printf("%s\n", recvBuf);
+            string recvBufToStr = recvBuf;
+            string retVal = "发送成功";
 
-            iResult = recv(ClientSocket, recvBuf, DEFAULT_BUFLEN, 0);
-            // if (iResult > 0)
-            // //这里为了测试文件传输 注释掉了很多无关动作 不然文件传输没法运行
+            //转移recvBuf
+
+            if(!fileFlag)
+            retVal = OutOfNetwork(recvBufToStr, userData, &mesCacheInfo);
+            //为了测试文件传输 不得不把OutOfNetwork()里的正常报文情况注释掉了
+
+            // if(fileFlag == 1)
             // {
-            //     // printf("%s\n", recvBuf);
-            //     // string recvBufToStr = recvBuf;
-            //     string retVal = "发送成功";
-
-            //     // retVal = OutOfNetwork(recvBufToStr, userData, &mesCacheInfo) + "发送成功";
-
-            //     cout << "size: " << mesCache.size() << endl;
-            //     cout << "发送" << endl
-            //          << retVal << endl;
-
-            //     int res = send(ClientSocket, retVal.c_str(), retVal.length(), 0);
-            //     // 马上要修改 要适应多线程的修改 此处只返回发送成功的信号就行了 要改动OutOfNetwork函数
-            //     if (res == SOCKET_ERROR)
-            //     {
-            //         printf("发送失败: %d\n", WSAGetLastError());
-            //         closesocket(ClientSocket);
-            //         WSACleanup();
-            //         return 1;
-            //     }
-            // }
-            if (iResult == 0)
-            //这里原来是else if 
-                {printf("连接即将关闭");
-                break;}
-            // else
-            // {
-            //     printf("连接发生错误", WSAGetLastError());
-            //     closesocket(ClientSocket);
-            //     WSACleanup();
-            //     return 1;
+            //     cout << (int) recvBuf[i] << endl;
             // }
 
-            // if (iResult == SOCKET_ERROR)
+
+            cout << "反馈消息： " << retVal << endl;
+
+            int res = send(ClientSocket, retVal.c_str(), retVal.length(), 0);
+            // 马上要修改 要适应多线程的修改 此处只返回发送成功的信号就行了 要改动OutOfNetwork函数
+
+            if (fileFlag == 1)
+            {
+                for(int i = 0; i < DEFAULT_BUFLEN; i ++)
+                {
+                    tempFile[i] = recvBuf[i];
+                }
+                cout << "tempFile: \n" << tempFile << endl;
+            }
+
+            //fileFlag为1 当前接收的是文件
+            //fileFlag为2 当前要接收文件大小
+            
+            if (res == SOCKET_ERROR)
+            {
+                printf("发送失败: %d\n", WSAGetLastError());
+                closesocket(ClientSocket);
+                WSACleanup();
+                return 1;
+            }
+
+            // if (fileFlag)
+            // //区分文件报文还是消息/登录报文
+            // //下下之策 为了赶时间做demo
             // {
-            //     printf("shutdown failed with error: %d\n", WSAGetLastError());
-            //     closesocket(ClientSocket);
-            //     WSACleanup();
-            //     return 1;
+            //     string retVal = "接收到文件大小";
+            //     int fres = recv(ClientSocket, fileSizeStr, 50, 0);
+            //     send(ClientSocket, retVal.c_str(), retVal.length(), 0);
+            //     fileSize = atoi(fileSizeStr);
+            //     cout << "文件大小报文 " << fileSizeStr << endl;
+            //     memset(fileSizeStr, '\0', 50);
             // }
         }
-        
-        FILE* writeFile = fopen("test.txt", "wb");
-        fwrite(recvBuf, 1, sizeof(recvBuf), writeFile);
-        fclose(writeFile);
+        if (iResult == 0)
+        //这里原来是else if (iResult == 0)
+        {
+            printf("连接即将关闭");
+            //return 1;
+        }
 
+ 
+        // else
+        // {
+        //     printf("连接发生错误", WSAGetLastError());
+        //     closesocket(ClientSocket);
+        //     WSACleanup();
+        //     return 1;
+        // }
+
+        // if (iResult == SOCKET_ERROR)
+        // {
+        //     printf("shutdown failed with error: %d\n", WSAGetLastError());
+        //     closesocket(ClientSocket);
+        //     WSACleanup();
+        //     return 1;
+        // }
+        // cout << recvBuf << endl;
+
+        if (fileFlag == 2)
+        {
+            fileSize = atoi(recvBuf);
+            //cout << "文件大小报文 " << tempFile << endl;
+            FILE* fout = fopen("C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication1\\Debug\\10.png", "wb");
+            fwrite(tempFile, fileSize, 1, fout);
+            fclose(fout);
+            memset(tempFile, '\0', DEFAULT_BUFLEN);
+            memset(recvBuf, '\0', DEFAULT_BUFLEN);
+        }
+
+        if(fileFlag == 1) fileFlag ++;
         // cleanup
         // closesocket(ClientSocket);
     }
