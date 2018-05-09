@@ -125,8 +125,10 @@ int __cdecl main(void)
     //再把tempFile写入
     unsigned long transCount = 0;
     unsigned long recvCount = 0;
-    FILE* fout = fopen("C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication1\\Debug\\1.mp4", "wb");
+    FILE* fout = fopen("C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication1\\Debug\\1.ppt", "wb");
     int leftSize = 0;
+    double startTime = 0;
+    double endTime = 0;
     
 
     while (1)
@@ -229,6 +231,7 @@ int __cdecl main(void)
                 // }
                 // cout << "tempFile: \n" << tempFile << endl;
                 retVal = "得到次数了";
+                startTime = GetTickCount();
                 transCount = atoi(recvBuf);
                 cout << retVal << " " << transCount << endl;
                 send(ClientSocket, retVal.c_str(), retVal.length(), 0);
@@ -273,8 +276,10 @@ int __cdecl main(void)
         else if(leftSize != 0)
         {
             fwrite(recvBuf, leftSize, 1, fout);
+            endTime = GetTickCount();
             fclose(fout);            
             cout << "文件接收完毕" << endl;
+            cout << "耗时 " << (endTime - startTime) *1000 << endl;
         }
         else ;
 
@@ -285,12 +290,12 @@ int __cdecl main(void)
             fwrite(recvBuf, DEFAULT_BUFLEN, 1, fout);
             // if(recvCount % 400 == 0)
             // cout << "发送进度: " << float(recvCount) / (float)(transCount) * 100 << endl;
-            cout << "recv: " << recvCount << endl;
+            // cout << "recv: " << recvCount << endl;
             // fclose(fout);
             // memset(tempFile, '\0', DEFAULT_BUFLEN);
             if(transCount == recvCount - 1)
 			{
-				cout << recvBuf << endl;
+				// cout << recvBuf << endl;
 				memset(recvBuf, '\0', DEFAULT_BUFLEN);
 			}
             recvCount ++;
