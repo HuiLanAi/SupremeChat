@@ -15,7 +15,7 @@ using namespace std;
 #pragma comment (lib, "AdvApi32.lib")
 
 
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 8188
 #define LOGIN_FLAG '1'
 #define FRIMES_FLAG '2'
 #define INQU_FLAG '3'
@@ -129,6 +129,90 @@ int firstTimeLogin(string* ipAddrServer, string loginInfo, addrinfo* hint, addri
     // system("cls");
 }
 
+int sendFileToServer(string* ipAddrServer, char* message, 
+                addrinfo* hint, addrinfo **result, int length, SOCKET connectSocket)
+//发送二进制流到服务器
+//把sendMessageToFile末尾的recv删掉了
+//因为要循环发送多次 防止阻塞
+{
+    int iRes = getaddrinfo((*ipAddrServer).c_str(), "27015", hint, result);
+    if(iRes != 0){
+        cout << "地址错误！ " << iRes << endl;
+        // WSACleanup();
+        return -1;
+    }
+    
+    struct addrinfo* ptr = *result;
+    SOCKET ConnectSocket;
+
+    for (; ptr != NULL; ptr = ptr->ai_next)
+    {
+        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
+                                      ptr->ai_protocol);
+        if (ConnectSocket == INVALID_SOCKET)
+        {
+            printf("SOCKET创建错误: %ld\n", WSAGetLastError());
+            // WSACleanup();
+            return -2;
+        }
+
+        iRes = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+        if (iRes == SOCKET_ERROR) {
+            //一旦失败 此处最好再尝试连接一次
+            closesocket(ConnectSocket);
+            ConnectSocket = INVALID_SOCKET;
+            continue;
+        }
+        break;
+    }
+
+    if (ConnectSocket == INVALID_SOCKET)
+    {
+        printf("连接失败!\n");
+        // WSACleanup();
+        return -3;
+    }
+
+    iRes = send(ConnectSocket, message, length, 0);
+    //发送初始登录信息
+    // for(int i = 0; i < length; i ++)
+    // {
+    //     cout << (int)message[i] << endl;
+    // }
+
+    if (iRes == SOCKET_ERROR)
+    {
+        printf("发送失败: %d\n", WSAGetLastError());
+        closesocket(ConnectSocket);
+        // WSACleanup();
+        return -4;
+    }
+
+    // char recvCache[DEFAULT_BUFLEN] = {0};
+    // iRes = recv(ConnectSocket, recvCache, DEFAULT_BUFLEN, 0);
+    
+    // if(iRes > 0)
+    // {
+    //     cout << "发送成功" << endl;
+    //     cout << recvCache << endl;
+    // }
+    // else if (iRes == 0) printf("连接已关闭\n");
+    // else printf("连接失败: %d\n", WSAGetLastError());
+    closesocket(ConnectSocket);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 int sendMessageToServer(string* ipAddrServer, string message, 
                 addrinfo* hint, addrinfo **result)
 /* 函数功能：发送普通对话消息 
@@ -185,6 +269,7 @@ int sendMessageToServer(string* ipAddrServer, string message,
 
     char recvCache[DEFAULT_BUFLEN] = {0};
     iRes = recv(ConnectSocket, recvCache, DEFAULT_BUFLEN, 0);
+    
     if(iRes > 0)
     {
         cout << "发送成功" << endl;

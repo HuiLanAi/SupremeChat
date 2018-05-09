@@ -25,7 +25,7 @@ using namespace std;
 #pragma comment (lib, "AdvApi32.lib")
 
 
-#define DEFAULT_BUFLEN 8188
+#define DEFAULT_BUFLEN 8100
 
 #define DEFAULT_PORT "27015"
 //老版本中用于收发一体的端口
@@ -124,39 +124,55 @@ int __cdecl main()
         if(fileOrNot)
         //发送文件
         {
-            char fileName[100] = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication2\\Debug\\1.png";
+            char fileName[100] = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication2\\Debug\\1.mp4";
             unsigned long fileSize = 0;
-            //cout << "请输入文件名" << endl;
-            //cin >> fileName;
 
-            // ifstream fileToSend (fileName, ios::binary | ios:: in | ios::ate);
             FILE* fp = fopen(fileName, "rb");
             fseek(fp, 0, SEEK_END);
             fileSize = ftell(fp);
             rewind(fp);
-            
-            // fileSize = fileToSend.tellg();
-			// fileSize++;
-            // fileToSend.seekg(0, ios::beg);
-
             char* fileInMem = new char [fileSize];
             memset(fileInMem, 0, fileSize);
-            fread(fileInMem, fileSize, 1, fp);
-            fclose(fp);
-            // //新开辟一块内存空间来接收大文件
-            // fileToSend.read(fileInMem, fileSize);
-            // fileToSend.close();
-
-            // string binFileToStr(fileInMem);
-            // cout << "文件内容： " << binFileToStr << endl;
-            //在这里偷个懒哈，，，
-            //暂时先不写专用的文件发送函数了 先用这个意思一下
-            sendFileToServer(&ipAddrServer, fileInMem, &hints, &result, fileSize);
-            sendMessageToServer(&ipAddrServer, to_string(fileSize), &hints, &result);
-            // for(int i = 0; i < fileSize; i ++) 
-            //     cout << (int)fileInMem[i] << endl;
-        }
+            unsigned long transCount = fileSize / DEFAULT_BUFLEN;
+            sendMessageToServer(&ipAddrServer, to_string(transCount), &hints, &result);
+            //在发送正式的文件内容之前 先发送要进行几次文件传送
+            //传统的文件读写方法
+            if(transCount == 0)
+            //如果一次发送就搞定
+            {
+                sendMessageToServer(&ipAddrServer, to_string(fileSize), &hints, &result);
+                sendFileToServer(&ipAddrServer, fileInMem, &hints, &result, fileSize, ConnectSocket);
+            }
+            else
+            //大文件
+            {
+                for (unsigned long i = 0; i < transCount; i++)
+                {
+                    fread(fileInMem, DEFAULT_BUFLEN, 1, fp);
+                    sendFileToServer(&ipAddrServer, fileInMem, &hints, &result, fileSize, ConnectSocket);
+                    if(i % 400 == 0)
+                        cout << "发送进度: " << float(i) / (float)(transCount) * 100 << endl;
+                }
+                memset(fileInMem, '\0', DEFAULT_BUFLEN);
+                //缓冲区清零
+                int leftSize = fileSize - DEFAULT_BUFLEN * transCount;
+                fread(fileInMem, leftSize, 1, fp);
+                string tempLeftSize = to_string(leftSize);
+                char mark[5] = {0};
+                for(int i = 0; i < tempLeftSize.size(); i ++) 
+                    mark[i] = tempLeftSize[i];
+                cout << "transCount: " << transCount << endl;
+                cout <<"leftsize: " << leftSize << endl;
+                sendFileToServer(&ipAddrServer, mark, &hints, &result, to_string(leftSize).size(), ConnectSocket);
+                //传送最后一次发送的分包大小
+                cout << "扔完了最后一次分包大小了" << endl;        
+                sendFileToServer(&ipAddrServer, fileInMem, &hints, &result, leftSize, ConnectSocket);
+                //最后一次分包
+                fclose(fp);
+            }
         
+        }
+
 
         cout << "请输入发送对象" << endl;
         cin >> recvFri;
