@@ -80,6 +80,10 @@ public:
 
 };
 
+DWORD WINAPI fileToMem(LPVOID para);
+DWORD WINAPI memToNet(LPVOID para);
+
+
 int main()
 {
     PublicCache publicCache;
@@ -145,7 +149,9 @@ DWORD WINAPI fileToMem(LPVOID para)
     //------------------------------------------------------
     writeCond = FAIL;
     memset(fileStr, '\0', LENGTH);
+    //清零
     fread(fileStr, cachePtr -> lastTimeSize, 1, file);
+    //从文件里读最后一个部分
     while(writeCond != SUCCESS)
     {
         if (cachePtr->available == UNLOCK &&
@@ -160,7 +166,58 @@ DWORD WINAPI fileToMem(LPVOID para)
             writeCond = SUCCESS;
         }    
     }
+    //------------------------------------------------------
+    //最后一次的传送
+    //-------------------------------------------------------
     fclose(file);
+    exit(0);
+}
+
+DWORD WINAPI memToNet(LPVOID para)
+{
+    PublicCache* cachePtr = (PublicCache*) para;
+    unsigned long count = 0;
+    char recvBuf[LENGTH] = { 0 };
+    int readCond = SUCCESS;
+
+    while(count < cachePtr -> transTime)
+    {
+        if(cachePtr -> available == UNLOCK &&
+            cachePtr -> empty == NOT_EMPTY)
+        {
+            cachePtr -> available = LOCK;
+            cachePtr -> readCache(recvBuf);
+            cout << recvBuf ;
+            cachePtr -> available = UNLOCK;
+            readCond = SUCCESS;
+            count ++;
+        }
+        else
+        {
+            readCond = FAIL;
+        }
+    }
+    //--------------------------------------------------
+    //整块接收
+    //--------------------------------------------------
+    readCond = FAIL;
+    memset(recvBuf, '\0', LENGTH);
+    //清零
+    while(writeCond != SUCCESS)
+    {
+        if(cachePtr -> available == UNLOCK &&
+            cachePtr -> empty == NOT_EMPTY)
+        {
+            cachePtr -> available = LOCK;
+            cacheptr -> readCache(recvBuf);
+            cout << recvBuf;
+            cachePtr -> available = UNLOCK; 
+            readCond = SUCCESS;
+        }
+    }
+    //--------------------------------------------------
+    //最后一次的传送
+    //-------------------------------------------------
     exit(0);
 }
 
