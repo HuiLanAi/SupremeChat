@@ -31,45 +31,25 @@ class PublicCache
 
     void zeroSpace()
     //给数组清零
-    //朱强写
     {
         for (int i = 0; i < WIDTH; i++)
-            memset(cache[i], '/0', LENGHTH);
+            memset(cache[i], '/0', LENGTH);
     }
 
     int judgeEmpty()
     //判断缓冲区是否为空
     //空则返回EMPTY 否则返回NOT_EMPTY
-    //朱强写
     {
-        int flag = 0;
-        for (int i = 0; i < WIDTH; i++)
-        {
-            if (cache[i][0] != '\0')
-                flag = 1;
-        }
-        if (flag == 1)
-            return (NOT_EMPTY);
-        else
-            return (EMPTY);
+        if(round == 0 && header == end) return EMPTY;
+        else return NOT_EMPTY;
     }
 
     int judgeFull()
     //判断缓冲区是否为满
     //满则返回FULL 否则返回NOT_FULL
-    //朱强写
     {
-        int flag = 0;
-        for (int i = 0; i < WIDTH; i++)
-            for (int j = 0; j < LENGTH; j++)
-            {
-                if (cache[i][j] == '\0') //存在一个为空
-                    flag = 1;
-            }
-        if (flag == 1)
-            return (NOT_FULL);
-        else
-            return (FULL);
+       if(round == 1 && header == end) return FULL;
+       else return NOT_FULL;
     }
 
     void readCache(char *recv)
@@ -79,8 +59,13 @@ class PublicCache
     //最后判断是否为空
     {
         for (int i = 0; i < LENGTH; i++)
-            recv = recv + cache[end][i];
+            recv[i] = cache[end][i];
+        //end指针指向当前可读的块
+        //换言之end指向的块里是有有效内容的
+
         end = (end + 1) % WIDTH;
+        if(round == 1 && end == 0) round = 0;
+        //赶上了一轮
     }
 
     void writeCache(char *fileStr)
@@ -89,19 +74,20 @@ class PublicCache
     //修改header指针
     //最后判断是否为满
     {
-        for (int i = 0; i < LENGHT; i++)
-            cache[header][i] = filestr[i];
+        for (int i = 0; i < LENGTH; i++)
+            cache[header - 1][i] = fileStr[i];
+        //header指向下一个可写的块
+        //换言之header指向的块里是没有有效内容的
+        
+        if(header == WIDTH - 1) round = 1;//越过了一轮
         header = (header + 1) % WIDTH;
     }
 
     int getVaildSize()
     //得到当前缓冲区有效区域的块数
     {
-        int count = 0;
-        for (int i = 0; i < LENGTH; i++)
-            if (cache[i][0] == '\0') //首字母位0
-                count++;
-        return (count);
+        if(round == 0) return header - end;
+        else return header + WIDTH - end;
     }
 };
 
@@ -225,13 +211,13 @@ DWORD WINAPI memToNet(LPVOID para)
     readCond = FAIL;
     memset(recvBuf, '\0', LENGTH);
     //清零
-    while (writeCond != SUCCESS)
+    while (readCond != SUCCESS)
     {
         if (cachePtr->available == UNLOCK &&
             cachePtr->empty == NOT_EMPTY)
         {
             cachePtr->available = LOCK;
-            cacheptr->readCache(recvBuf);
+            cachePtr->readCache(recvBuf);
             cout << recvBuf;
             cachePtr->available = UNLOCK;
             readCond = SUCCESS;
