@@ -34,7 +34,7 @@ class PublicCache
     //朱强写
     {
         for (int i = 0; i < WIDTH; i++)
-            memset(cache[i], '/0', LENGTH);
+            memset(cache[i], '/0', LENGHTH);
     }
 
     int judgeEmpty()
@@ -89,8 +89,8 @@ class PublicCache
     //修改header指针
     //最后判断是否为满
     {
-        for (int i = 0; i < LENGTH; i++)
-            cache[header][i] = fileStr[i];
+        for (int i = 0; i < LENGHT; i++)
+            cache[header][i] = filestr[i];
         header = (header + 1) % WIDTH;
     }
 
@@ -225,13 +225,13 @@ DWORD WINAPI memToNet(LPVOID para)
     readCond = FAIL;
     memset(recvBuf, '\0', LENGTH);
     //清零
-    while (readCond != SUCCESS)
+    while (writeCond != SUCCESS)
     {
         if (cachePtr->available == UNLOCK &&
             cachePtr->empty == NOT_EMPTY)
         {
             cachePtr->available = LOCK;
-            cachePtr->readCache(recvBuf);
+            cacheptr->readCache(recvBuf);
             cout << recvBuf;
             cachePtr->available = UNLOCK;
             readCond = SUCCESS;
