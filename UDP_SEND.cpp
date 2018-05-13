@@ -23,10 +23,9 @@ int main()
     string hostIpAddr = "";
     cout << "输入主机ip 地址" << endl;
     cin >> hostIpAddr;
-	system("clear");
     char SendBuf[BUFLEN] = {0};//缓冲区
 
-    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\Pipeline.cpp";
+    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\aaa.mp4";
     unsigned long fileSize = 0;
     FILE* fp = fopen(path.c_str(), "rb");
     fseek(fp, 0, SEEK_END);

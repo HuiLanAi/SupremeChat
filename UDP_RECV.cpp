@@ -36,7 +36,7 @@ int main()
     unsigned long curRecvCount = 0;
     //文件传输相关参数
 
-    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\a.cpp";
+    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\a.mp4";
     FILE* fp = fopen(path.c_str(), "wb");
     //文件写相关参数
 
@@ -74,12 +74,16 @@ int main()
     //-----------------------------------------------------------------
     wprintf(L"Receiving datagrams...\n");
 
+    DWORD startTime = 0;
+    DWORD endTime = 0;
+
     while(1)
     {
         if(curRecvCount == 0)
         {
             iResult = recvfrom(RecvSocket, RecvBuf, BUFLEN, 0, 
                                 (SOCKADDR *)&SenderAddr, &SenderAddrSize);
+            startTime = GetTickCount();
             transCount = (unsigned int ) atoi(RecvBuf);
             cout << "传输次数为: " << transCount << endl;
             if (iResult == SOCKET_ERROR)
@@ -127,6 +131,7 @@ int main()
             }
             fwrite(RecvBuf, lastTimeSize, 1, fp);
             fclose(fp);
+            endTime = GetTickCount();
             break;
         }
         //---------------------------------------------------------
@@ -141,6 +146,7 @@ int main()
         }
     }
 
+    
     //---------------------------------------------------------------------
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -159,5 +165,8 @@ int main()
     // Clean up and exit.
     wprintf(L"Exiting.\n");
     WSACleanup();
+    cout << "耗时 " << (float)(endTime - startTime) / 1000 << endl;
+    cin >> path;
+
     return 0;
 }
