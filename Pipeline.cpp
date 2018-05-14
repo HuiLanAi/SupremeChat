@@ -12,79 +12,91 @@ using namespace std;
 #define EMPTY 1
 #define NOT_FULL 0
 #define FULL 1
-#define FILE_PATH "C"
+#define FILE_PATH "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\ConsoleApplication2\\Debug\\1.txt"
 #define SUCCESS 1
 #define FAIL 0
+#define DONE 0
+#define NOT_DONE 1
 
 class PublicCache
 {
   public:
-    int header;                //å‰æŒ‡é’ˆæ ‡è¯†
-    int end;                   //å°¾æŒ‡é’ˆæ ‡è¯†
-    char cache[WIDTH][LENGTH]; //ç¼“å†²åŒºæ•°ç»„
-    int available;             //ç¼“å†²åŒºè¯»å†™é”
-    int empty;                 //ç¼“å†²åŒºæ˜¯å¦ä¸ºç©ºçš„æ ‡è¯†
-    int full;                  //ç¼“å†²åŒºæ˜¯å¦æ»¡çš„æ ‡è¯†
-    int round;                 //headerå’Œendç›¸å¯¹ä½ç½®çš„æ ‡è¯†
-    int lastTimeSize;          //æœ€åä¸€ä¸ªæ–‡ä»¶å—çš„å¤§å°
-    unsigned long transTime;   //æ–‡ä»¶æ•´å—ä¼ è¾“çš„æ¬¡æ•°
+    int header;                //Ç°Ö¸Õë±êÊ¶
+    int end;                   //Î²Ö¸Õë±êÊ¶
+    char cache[WIDTH][LENGTH]; //»º³åÇøÊı×é
+    int available;             //»º³åÇø¶ÁĞ´Ëø
+    int empty;                 //»º³åÇøÊÇ·ñÎª¿ÕµÄ±êÊ¶
+    int full;                  //»º³åÇøÊÇ·ñÂúµÄ±êÊ¶
+    int round;                 //headerºÍendÏà¶ÔÎ»ÖÃµÄ±êÊ¶
+    int lastTimeSize;          //×îºóÒ»¸öÎÄ¼ş¿éµÄ´óĞ¡
+    unsigned long transTime;   //ÎÄ¼şÕû¿é´«ÊäµÄ´ÎÊı
+    int pipeLineCond;
 
     void zeroSpace()
-    //ç»™æ•°ç»„æ¸…é›¶
+    //¸øÊı×éÇåÁã
     {
         for (int i = 0; i < WIDTH; i++)
             memset(cache[i], '/0', LENGTH);
     }
 
     int judgeEmpty()
-    //åˆ¤æ–­ç¼“å†²åŒºæ˜¯å¦ä¸ºç©º
-    //ç©ºåˆ™è¿”å›EMPTY å¦åˆ™è¿”å›NOT_EMPTY
+    //ÅĞ¶Ï»º³åÇøÊÇ·ñÎª¿Õ
+    //¿ÕÔò·µ»ØEMPTY ·ñÔò·µ»ØNOT_EMPTY
     {
         if(round == 0 && header == end) return EMPTY;
         else return NOT_EMPTY;
     }
 
     int judgeFull()
-    //åˆ¤æ–­ç¼“å†²åŒºæ˜¯å¦ä¸ºæ»¡
-    //æ»¡åˆ™è¿”å›FULL å¦åˆ™è¿”å›NOT_FULL
+    //ÅĞ¶Ï»º³åÇøÊÇ·ñÎªÂú
+    //ÂúÔò·µ»ØFULL ·ñÔò·µ»ØNOT_FULL
     {
        if(round == 1 && header == end) return FULL;
        else return NOT_FULL;
     }
 
     void readCache(char *recv)
-    //è¯»ç¼“å­˜åŒº
-    //ä¼ å…¥recv å°†å½“å‰endå¯¹åº”çš„å—å†™å…¥recv
-    //ä¿®æ”¹endæŒ‡é’ˆ
-    //æœ€ååˆ¤æ–­æ˜¯å¦ä¸ºç©º
+    //¶Á»º´æÇø
+    //´«Èërecv ½«µ±Ç°end¶ÔÓ¦µÄ¿éĞ´Èërecv
+    //ĞŞ¸ÄendÖ¸Õë
+    //×îºóÅĞ¶ÏÊÇ·ñÎª¿Õ
     {
         for (int i = 0; i < LENGTH; i++)
             recv[i] = cache[end][i];
-        //endæŒ‡é’ˆæŒ‡å‘å½“å‰å¯è¯»çš„å—
-        //æ¢è¨€ä¹‹endæŒ‡å‘çš„å—é‡Œæ˜¯æœ‰æœ‰æ•ˆå†…å®¹çš„
+        //endÖ¸ÕëÖ¸Ïòµ±Ç°¿É¶ÁµÄ¿é
+        //»»ÑÔÖ®endÖ¸ÏòµÄ¿éÀïÊÇÓĞÓĞĞ§ÄÚÈİµÄ
 
         end = (end + 1) % WIDTH;
         if(round == 1 && end == 0) round = 0;
-        //èµ¶ä¸Šäº†ä¸€è½®
+        //¸ÏÉÏÁËÒ»ÂÖ
+        empty = judgeEmpty();
+        full = judgeFull();
+        //ĞŞ¸Ä±êÖ¾Î»
     }
 
     void writeCache(char *fileStr)
-    //å†™ç¼“å­˜åŒº
-    //ä¼ å…¥fileStr å°†å…¶å€¼å†™å…¥ç¼“å†²åŒºheaderå¯¹åº”çš„ä½ç½®å—
-    //ä¿®æ”¹headeræŒ‡é’ˆ
-    //æœ€ååˆ¤æ–­æ˜¯å¦ä¸ºæ»¡
+    //Ğ´»º´æÇø
+    //´«ÈëfileStr ½«ÆäÖµĞ´Èë»º³åÇøheader¶ÔÓ¦µÄÎ»ÖÃ¿é
+    //ĞŞ¸ÄheaderÖ¸Õë
+    //×îºóÅĞ¶ÏÊÇ·ñÎªÂú
     {
+        // cout << "header: " << header << endl;
         for (int i = 0; i < LENGTH; i++)
-            cache[header - 1][i] = fileStr[i];
-        //headeræŒ‡å‘ä¸‹ä¸€ä¸ªå¯å†™çš„å—
-        //æ¢è¨€ä¹‹headeræŒ‡å‘çš„å—é‡Œæ˜¯æ²¡æœ‰æœ‰æ•ˆå†…å®¹çš„
-        
-        if(header == WIDTH - 1) round = 1;//è¶Šè¿‡äº†ä¸€è½®
+            cache[header][i] = fileStr[i];
+        //headerÖ¸ÏòÏÂÒ»¸ö¿ÉĞ´µÄ¿é
+        //»»ÑÔÖ®headerÖ¸ÏòµÄ¿éÀïÊÇÃ»ÓĞÓĞĞ§ÄÚÈİµÄ
+
+        if(header == WIDTH - 1) round = 1;//Ô½¹ıÁËÒ»ÂÖ
         header = (header + 1) % WIDTH;
+        //ĞŞ¸Äheader
+
+        empty = judgeEmpty();
+        full = judgeFull();
+        //ĞŞ¸Ä±êÖ¾Î»
     }
 
     int getVaildSize()
-    //å¾—åˆ°å½“å‰ç¼“å†²åŒºæœ‰æ•ˆåŒºåŸŸçš„å—æ•°
+    //µÃµ½µ±Ç°»º³åÇøÓĞĞ§ÇøÓòµÄ¿éÊı
     {
         if(round == 0) return header - end;
         else return header + WIDTH - end;
@@ -102,22 +114,42 @@ int main()
     publicCache.full = NOT_FULL;
     publicCache.available = UNLOCK;
     publicCache.zeroSpace();
+    publicCache.pipeLineCond = NOT_DONE;
     //--------------------------------------------------------
-    //ç¼“å†²åŒºçš„åˆå§‹åŒ–
+    //»º³åÇøµÄ³õÊ¼»¯
     //-------------------------------------------------------
 
-    /* ä»¥äºŒè¿›åˆ¶æµæ‰“å¼€æ–‡ä»¶
-        è®¡ç®—å¤§å°
-        è®¡ç®—æ•´å—å‘é€æ¬¡æ•°å’Œæœ€åä¸€æ¬¡å‘é€å¤§å°
-        ä¿®æ”¹publicCacheé‡Œçš„å¯¹åº”å±æ€§ */
-    //ä¸Šè¿°åŠŸèƒ½æœ±å¼ºå®Œæˆ
+    FILE* fp = fopen(FILE_PATH, "rb");
+    unsigned long fileSize = 0;
+    fseek(fp, 0, SEEK_END);
+    fileSize = ftell(fp);
+    rewind(fp);
+    publicCache.transTime = fileSize / LENGTH;
+    publicCache.lastTimeSize = fileSize - LENGTH * publicCache.transTime;
+    fclose(fp);
+    //-------------------------------------------------------------------
+    /* ÒÔ¶ş½øÖÆÁ÷´ò¿ªÎÄ¼ş
+        ¼ÆËã´óĞ¡
+        ¼ÆËãÕû¿é·¢ËÍ´ÎÊıºÍ×îºóÒ»´Î·¢ËÍ´óĞ¡
+        ĞŞ¸ÄpublicCacheÀïµÄ¶ÔÓ¦ÊôĞÔ */
+    //--------------------------------------------------------------------
+
+    HANDLE fTM = CreateThread(NULL, 0, fileToMem, (void*)&publicCache, 0, NULL);
+    HANDLE mTN = CreateThread(NULL, 0, memToNet, (void*)&publicCache, 0, NULL);
+
+    // Sleep(5000);
+    CloseHandle(fTM);
+    CloseHandle(mTN);
+
+    while(publicCache.pipeLineCond == NOT_DONE) Sleep(20);
+    //ÊÖ¶¯»¬»ü
+
 }
 
 DWORD WINAPI fileToMem(LPVOID para)
 {
-    FILE *file; //è¦æ“ä½œçš„è¯»å…¥å†…å­˜çš„æ–‡ä»¶æŒ‡é’ˆ
-    //æœ±å¼ºåœ¨æ­¤å¤„ä¿®æ”¹ è®©fileä»¥äºŒè¿›åˆ¶æµæ‰“å¼€FILE_PATHçš„æ–‡ä»¶
-
+	FILE *file = fopen(FILE_PATH, "rb");
+    //Òª²Ù×÷µÄ¶ÁÈëÄÚ´æµÄÎÄ¼şÖ¸Õë
     PublicCache *cachePtr = (PublicCache *)para;
 
     unsigned long count = 0;
@@ -127,24 +159,28 @@ DWORD WINAPI fileToMem(LPVOID para)
     while (count < cachePtr->transTime)
     {
         if (writeCond == SUCCESS)
+        {
             fread(fileStr, LENGTH, 1, file);
-        //å…ˆè¯»ä¸€ä¸ª
-        //å†åˆ¤æ–­ç¼“å†²åŒºå¯ç”¨ä¸
-        //å†ä¸Šé”
+            writeCond = FAIL;
+			cout << "done load file " << count << endl;
+        }
+        //ÏÈ¶ÁÒ»¸ö
+        //ÔÙÅĞ¶Ï»º³åÇø¿ÉÓÃ²»
+        //ÔÙÉÏËø
 
         if (cachePtr->available == UNLOCK &&
             cachePtr->full == NOT_FULL)
         {
             cachePtr->available = LOCK;
             cachePtr->writeCache(fileStr);
-            //ç¬¬ä¸€æ¬¡å†™å…¥
+            //µÚÒ»´ÎĞ´Èë
             if (cachePtr->getVaildSize() > 0)
                 cachePtr->writeCache(fileStr);
-            //ç¬¬äºŒæ¬¡å†™å…¥
+            //µÚ¶ş´ÎĞ´Èë
             cachePtr->available = UNLOCK;
-            //ä¸€ä¸ªå†™å…¥å®Œæˆ
+            //Ò»¸öĞ´ÈëÍê³É
             writeCond = SUCCESS;
-            //å†™æˆåŠŸ å¯ä»¥ä»æ–‡ä»¶é‡Œè¯»ä¸‹ä¸€ä¸ªå—
+            //Ğ´³É¹¦ ¿ÉÒÔ´ÓÎÄ¼şÀï¶ÁÏÂÒ»¸ö¿é
             count++;
         }
         else
@@ -153,31 +189,33 @@ DWORD WINAPI fileToMem(LPVOID para)
         }
     }
     //-----------------------------------------------------
-    //æ•´å—ä¼ é€
+    //Õû¿é´«ËÍ
     //------------------------------------------------------
     writeCond = FAIL;
     memset(fileStr, '\0', LENGTH);
-    //æ¸…é›¶
+    //ÇåÁã
     fread(fileStr, cachePtr->lastTimeSize, 1, file);
-    //ä»æ–‡ä»¶é‡Œè¯»æœ€åä¸€ä¸ªéƒ¨åˆ†
+    //´ÓÎÄ¼şÀï¶Á×îºóÒ»¸ö²¿·Ö
     while (writeCond != SUCCESS)
     {
         if (cachePtr->available == UNLOCK &&
             cachePtr->full == NOT_FULL)
         {
             cachePtr->available = LOCK;
-            //å¯¹headå½“å‰æ‰€æŒ‡å‘çš„å—æ¸…é›¶
-            //æœ±å¼ºå®Œæˆè¯¥éƒ¨åˆ†
+            //¶Ôheadµ±Ç°ËùÖ¸ÏòµÄ¿éÇåÁã
+            //ÖìÇ¿Íê³É¸Ã²¿·Ö
             cachePtr->writeCache(fileStr);
             cachePtr->available = UNLOCK;
-            //ä¸€ä¸ªå†™å…¥å®Œæˆ
+            //Ò»¸öĞ´ÈëÍê³É
             writeCond = SUCCESS;
         }
     }
     //------------------------------------------------------
-    //æœ€åä¸€æ¬¡çš„ä¼ é€
+    //×îºóÒ»´ÎµÄ´«ËÍ
     //-------------------------------------------------------
     fclose(file);
+    int a = 0;
+    cin >> a;
     exit(0);
 }
 
@@ -188,17 +226,18 @@ DWORD WINAPI memToNet(LPVOID para)
     char recvBuf[LENGTH] = {0};
     int readCond = SUCCESS;
 
-    while (count < cachePtr->transTime)
+    while (count < cachePtr -> transTime)
     {
-        if (cachePtr->available == UNLOCK &&
-            cachePtr->empty == NOT_EMPTY)
+        cout << "reading " << count << endl;
+        if (cachePtr -> available == UNLOCK &&
+            cachePtr -> empty == NOT_EMPTY)
         {
             cachePtr->available = LOCK;
             cachePtr->readCache(recvBuf);
             cout << recvBuf;
             cachePtr->available = UNLOCK;
             readCond = SUCCESS;
-            count++;
+            count ++;
         }
         else
         {
@@ -206,11 +245,11 @@ DWORD WINAPI memToNet(LPVOID para)
         }
     }
     //--------------------------------------------------
-    //æ•´å—æ¥æ”¶
+    //Õû¿é½ÓÊÕ
     //--------------------------------------------------
     readCond = FAIL;
     memset(recvBuf, '\0', LENGTH);
-    //æ¸…é›¶
+    //ÇåÁã
     while (readCond != SUCCESS)
     {
         if (cachePtr->available == UNLOCK &&
@@ -224,7 +263,9 @@ DWORD WINAPI memToNet(LPVOID para)
         }
     }
     //--------------------------------------------------
-    //æœ€åä¸€æ¬¡çš„ä¼ é€
+    //×îºóÒ»´ÎµÄ´«ËÍ
     //-------------------------------------------------
+    int a = 0;
+    cin >> a;
     exit(0);
 }
