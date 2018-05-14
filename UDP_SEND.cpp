@@ -16,7 +16,22 @@ using namespace std;
 // Link with ws2_32.lib
 #pragma comment(lib, "Ws2_32.lib")
 
-#define BUFLEN 512
+#define BUFLEN 400
+#define WINDOW_SIZE 9
+
+// class SPP_SEND_CTRL
+// {
+//     char window [WINDOW_SIZE][BUFLEN];
+//     int end;
+//     int head;
+//     int missNo;
+// };
+
+
+
+
+
+
 
 int main()
 {
@@ -25,7 +40,7 @@ int main()
     cin >> hostIpAddr;
     char SendBuf[BUFLEN] = {0};//缓冲区
 
-    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\aaa.mp4";
+    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\aaa.pdf";
     unsigned long fileSize = 0;
     FILE* fp = fopen(path.c_str(), "rb");
     fseek(fp, 0, SEEK_END);
@@ -69,7 +84,6 @@ int main()
     }
     //---------------------------------------------
     // Set up the RecvAddr structure with the IP address of
-    // the receiver (in this example case "192.168.1.1")
     // and the specified port number.
     RecvAddr.sin_family = AF_INET;
     RecvAddr.sin_port = htons(Port);
@@ -108,10 +122,15 @@ int main()
 
         else if(curSendTime < transCount)
         {
+			// if (curSendTime % 32 == 0 && curSendTime != 0) Sleep(80);
+            // if (curSendTime % 100 == 0 && curSendTime != 0) Sleep(80);
+            cout << curSendTime << endl;
             fread(SendBuf, BUFLEN, 1, fp);
             iResult = sendto(SendSocket, SendBuf,
                              BUFLEN, 0, (SOCKADDR *)&RecvAddr, sizeof(RecvAddr));
             curSendTime++;
+            Sleep(2);
+			if (curSendTime % 100 == 0) Sleep(100);
         }
         //--------------------------------------------------------------------------
         //连续传送整块
@@ -136,6 +155,7 @@ int main()
             fread(SendBuf, lastTimeSize, 1, fp);
             iResult = sendto(SendSocket, SendBuf,
                              lastTimeSize, 0, (SOCKADDR *)&RecvAddr, sizeof(RecvAddr));
+			Sleep(5);
             if (iResult == SOCKET_ERROR)
             {
                 wprintf(L"sendto failed with error: %d\n", WSAGetLastError());
@@ -164,6 +184,7 @@ int main()
         //标准检查式结尾
     }
 
+    Sleep(5000);
     //---------------------------------------------------------
     //---------------------------------------------------------
     //---------------------------------------------------------
@@ -183,3 +204,8 @@ int main()
     WSACleanup();
     return 0;
 }
+
+// DWORD WINAPI SPP_CheckRecv(LPVOID para)
+// {
+
+// }
