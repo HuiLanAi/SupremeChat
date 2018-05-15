@@ -17,12 +17,11 @@ using namespace std;
 #pragma comment(lib, "AdvApi32.lib")
 
 #define DEFAULT_BUFLEN 8800
-#define CACHE_WID 12
 #define CACHE_LENGTH DEFAULT_BUFLEN
 #define DEFAULT_PORT "27015"
+#define CACHE_WID 100
 //端口号和空间大小的宏定义
 
-#define CACHE_WID 100
 #define LOCK 0
 #define UNLOCK 1
 #define NOT_EMPTY 0
@@ -121,6 +120,12 @@ int __cdecl main(void)
     //类对象参数初始化
     //---------------------------------------------------------
 
+    double fileSizeKB = 0;
+    DWORD startTime = 0;
+    DWORD endTime = 0;
+    //测速相关
+    //--------------------------------------------------------------------------
+
     WSADATA wsaData;
     int iResult;
 
@@ -218,6 +223,7 @@ int __cdecl main(void)
     //---------------------------------------------------------------------------------------------
 
     iResult = recv(ClientSocket, countStr, 30, 0);
+    send(ClientSocket, "OK", 3, 0);//发送一个确认信息
     if (iResult < 0)
     {
         printf("recv failed with error: %d\n", WSAGetLastError());
@@ -227,21 +233,26 @@ int __cdecl main(void)
         return 1;
     }
     transCount = cache.transTime = (unsigned long)atoi(countStr);
+    cout << "文件传输次数 " << transCount << endl;
     //接收发送次数并初始化信息
     //----------------------------------------------------------------
     memset(countStr, '\0', 30);
     iResult = recv(ClientSocket, countStr, 30, 0);
+    send(ClientSocket, "OK", 3, 0);//发送一个确认信息
     lastTimeSize = cache.lastTimeSize = (int)atoi(countStr);
+    cout << endl << "LTS: " << cache.lastTimeSize << endl;
     //接收最后一个块的尺寸
     //----------------------------------------------------------------
+
+    fileSizeKB = (double)(DEFAULT_BUFLEN * transCount + lastTimeSize) / 1024;
 
     HANDLE pipeline = CreateThread(NULL, 0, readCache,
                                    (void *)&cache, 0, NULL);
     CloseHandle(pipeline);
-    cout << "文件传输次数 " << transCount << endl;
-    cout << endl << "LTS: " << cache.lastTimeSize << endl;
-    Sleep(10000);
+    cout << " 文件大小： " << fileSizeKB << "KB" << endl;
     //线程启动 
+
+    startTime = GetTickCount();
 
     while(curRecvCount < transCount)
     {
@@ -250,7 +261,7 @@ int __cdecl main(void)
         {
             // cout << curRecvCount << " " << cache.header << " " << cache.end << " " << cache.round;
             iResult = recv(ClientSocket, cache.cacheBuf[cache.header]
-                            , CACHE_LENGTH, 0);
+                            , CACHE_LENGTH, MSG_WAITALL);
             curRecvCount++;
             if(cache.header == CACHE_WID - 1)
             {
@@ -293,6 +304,11 @@ int __cdecl main(void)
     //改读写标记位
     //socket此时是生产者 不改读写标记位是不可能的
     //--------------------------------------------------------
+    
+    endTime = GetTickCount();
+    double timeCost = (double)(endTime - startTime) / 1000;
+    cout << "耗时: " << timeCost << " 秒" << endl; 
+    cout << "速度：" << fileSizeKB / timeCost << "KB/S" << endl;
 
     if (iResult < 0)
     {
@@ -317,10 +333,10 @@ int __cdecl main(void)
     }
 
     // cleanup
-    Sleep(5000);
     closesocket(ClientSocket);
     WSACleanup();
 
+    cin >> startTime;
 
     return 0;
 }
@@ -338,7 +354,7 @@ DWORD WINAPI readCache(LPVOID para)
             fwrite(cachePtr->cacheBuf[cachePtr->end], CACHE_LENGTH, 1, cachePtr->fp);
             if(cachePtr -> end == CACHE_WID - 1) cachePtr -> round = 0;
             cachePtr -> end = (cachePtr -> end + 1) % CACHE_WID;
-            cout << "write: " << count  << " end " << cachePtr->end << endl;
+            // cout << "write: " << count  << " end " << cachePtr->end << endl;
             count ++;
         }
         //-----------------------------------------------------

@@ -17,12 +17,11 @@ using namespace std;
 #pragma comment(lib, "AdvApi32.lib")
 
 #define DEFAULT_BUFLEN 8800
-#define CACHE_WID 12
+#define CACHE_WID 42
 #define CACHE_LENGTH DEFAULT_BUFLEN
 #define DEFAULT_PORT "27015"
 //端口号和空间大小的宏定义
 
-#define CACHE_WID 100
 #define LOCK 0
 #define UNLOCK 1
 #define NOT_EMPTY 0
@@ -98,7 +97,7 @@ DWORD WINAPI writeCache(LPVOID para);
 int __cdecl main()
 {
 
-    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\aaa.pdf";
+    string path = "C:\\Users\\Mark.Wen\\Desktop\\SupremeChat\\aaa.mp4";
     unsigned long fileSize = 0;
     FILE* fp = fopen(path.c_str(), "rb");
     fseek(fp, 0, SEEK_END);
@@ -200,10 +199,10 @@ int __cdecl main()
     //------------------------------------------------------------------------------
     //-----------------------发送核心模块--------------------------------------------
     //-----------------------------------------------------------------------------
-
+    char OK[3] = {0};
     iResult = send(ConnectSocket, to_string(transCount).c_str(), 
                     to_string(transCount).length(), 0);
-    Sleep(10);
+    recv(ConnectSocket, OK, 3, MSG_WAITALL);
     if (iResult == SOCKET_ERROR)
     {
         printf("send failed with error: %d\n", WSAGetLastError());
@@ -216,11 +215,9 @@ int __cdecl main()
     //---------------------------------------------------------------------------
     iResult = send(ConnectSocket, to_string(cache.lastTimeSize).c_str(), 
                     to_string(cache.lastTimeSize).length(), 0);
-    Sleep(10);
+    recv(ConnectSocket, OK, 3, MSG_WAITALL);
     //发送最后一片的大小
     //---------------------------------------------------------------------------
-    Sleep(10000);
-
     HANDLE pipeline = CreateThread(NULL, 0, writeCache,
                                    (void *)&cache, 0, NULL);
     CloseHandle(pipeline);
@@ -248,7 +245,8 @@ int __cdecl main()
             curTransCount ++;
             if (iResult == SOCKET_ERROR)
             {
-                printf("send failed with error: %d\n", WSAGetLastError());
+                printf("内部循环: %d ", WSAGetLastError());
+				cout << curTransCount << endl;
                 Sleep(5000);
                 // closesocket(ConnectSocket);
                 WSACleanup();
@@ -265,12 +263,14 @@ int __cdecl main()
     iResult = send(ConnectSocket, cache.cacheBuf[cache.end], cache.lastTimeSize, 0);
     if (iResult == SOCKET_ERROR)
     {
-        printf("send failed with error: %d\n", WSAGetLastError());
+        printf("最后一次失败: %d\n", WSAGetLastError());
         // closesocket(ConnectSocket);
         WSACleanup();
         return 1;
     }
-    // Sleep(10000);
+	//char OK[3] = { 0 };
+	// recv(ConnectSocket, OK, 3, 0);
+    cout << "发送结束" << endl;
     //发送最后一片
     //------------------------------------------------------------------
 
